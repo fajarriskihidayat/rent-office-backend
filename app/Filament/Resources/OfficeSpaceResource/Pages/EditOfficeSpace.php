@@ -16,4 +16,9 @@ class EditOfficeSpace extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getURL('index');
+    }
 }
