@@ -52,6 +52,7 @@ class BookingTransactionController extends Controller
         // mengirim notif melalui sms atau whatsapp dengan twilio
         $sid = getenv("TWILIO_ACCOUNT_SID");
         $token = getenv("TWILIO_AUTH_TOKEN");
+        $noWA = getenv("TWILIO_PHONE_NUMBER_WA");
         $twilio = new Client($sid, $token);
 
         $messageBody = "Hi {$bookingTransaction->name}, Terima kasih telah melakukan booking kantor di RentOffice.\n\n";
@@ -59,11 +60,20 @@ class BookingTransactionController extends Controller
         $messageBody .= "Kami akan mengembalikan status pesanan Anda secepat mungkin.";
 
         // kirim dengan fitur sms
-        $message = $twilio->messages->create(
-            "+{$bookingTransaction->phone_number}",
+        // $$twilio->messages->create(
+        //     "+{$bookingTransaction->phone_number}",
+        //     [
+        //         "body" => $messageBody,
+        //         "from" => getenv("TWILIO_PHONE_NUMBER")
+        //     ]
+        // );
+
+        // kirim dengan fitur whatsapp
+        $twilio->messages->create(
+            "whatsapp:+{$bookingTransaction->phone_number}",
             [
                 "body" => $messageBody,
-                "from" => getenv("TWILIO_PHONE_NUMBER")
+                "from" => "whatsapp:{$noWA}"
             ]
         );
 

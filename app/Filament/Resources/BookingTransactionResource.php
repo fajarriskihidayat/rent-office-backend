@@ -123,6 +123,7 @@ class BookingTransactionResource extends Resource
                         // mengirim notif melalui sms atau whatsapp dengan twilio
                         $sid = getenv("TWILIO_ACCOUNT_SID");
                         $token = getenv("TWILIO_AUTH_TOKEN");
+                        $noWA = getenv("TWILIO_PHONE_NUMBER_WA");
                         $twilio = new Client($sid, $token);
 
                         $messageBody = "Hi {$record->name}, pemesanan Anda dengan kode booking {$record->booking_trx_id} sudah terbayar penuh.\n\n";
@@ -130,11 +131,20 @@ class BookingTransactionResource extends Resource
                         $messageBody .= "Jika Anda memiliki pertanayaan silahkan menghubungi CS kami di rentoffice.com/contact-us.";
 
                         // kirim dengan fitur sms
-                        $message = $twilio->messages->create(
-                            "+{$record->phone_number}",
+                        // $$twilio->messages->create(
+                        //     "+{$record->phone_number}",
+                        //     [
+                        //         "body" => $messageBody,
+                        //         "from" => getenv("TWILIO_PHONE_NUMBER")
+                        //     ]
+                        // );
+
+                        // kirim dengan fitur whatsapp
+                        $twilio->messages->create(
+                            "whatsapp:+{$record->phone_number}",
                             [
                                 "body" => $messageBody,
-                                "from" => getenv("TWILIO_PHONE_NUMBER")
+                                "from" => "whatsapp:{$noWA}"
                             ]
                         );
                     })
