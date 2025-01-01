@@ -7,12 +7,14 @@ use App\Filament\Resources\BookingTransactionResource\RelationManagers;
 use App\Models\BookingTransaction;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Twilio\Rest\Client;
 
 class BookingTransactionResource extends Resource
 {
@@ -103,6 +105,52 @@ class BookingTransactionResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+
+                Tables\Actions\Action::make('approve')
+                    ->label('Approve')
+                    ->icon('heroicon-o-check-circle')
+                    ->action(function (BookingTransaction $record) {
+                        $record->is_paid = true;
+                        $record->save();
+
+                        // custom notifikasi
+                        Notification::make()
+                            ->title('Booking Approved')
+                            ->success()
+                            ->body('The booking has been successfully approved.')
+                            ->send();
+
+                        // mengirim notif melalui sms atau whatsapp dengan twilio
+                        $sid = getenv("TWILIO_ACCOUNT_SID");
+                        $token = getenv("TWILIO_AUTH_TOKEN");
+                        $noWA = getenv("TWILIO_PHONE_NUMBER_WA");
+                        $twilio = new Client($sid, $token);
+
+                        $messageBody = "Hi {$record->name}, pemesanan Anda dengan kode booking {$record->booking_trx_id} sudah terbayar penuh.\n\n";
+                        $messageBody .= "Silahkan datang ke lokasi kantor {$record->officeSpace->name} sesuai dengan jadwal untuk mulai menggunakan ruangan kerja tersebut.\n\n";
+                        $messageBody .= "Jika Anda memiliki pertanayaan silahkan menghubungi CS kami di rentoffice.com/contact-us.";
+
+                        // kirim dengan fitur sms
+                        // $$twilio->messages->create(
+                        //     "+{$record->phone_number}",
+                        //     [
+                        //         "body" => $messageBody,
+                        //         "from" => getenv("TWILIO_PHONE_NUMBER")
+                        //     ]
+                        // );
+
+                        // kirim dengan fitur whatsapp
+                        $twilio->messages->create(
+                            "whatsapp:+{$record->phone_number}",
+                            [
+                                "body" => $messageBody,
+                                "from" => "whatsapp:{$noWA}"
+                            ]
+                        );
+                    })
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->visible(fn(BookingTransaction $record) => !$record->is_paid)
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
